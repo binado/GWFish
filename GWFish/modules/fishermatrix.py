@@ -246,7 +246,7 @@ class FisherMatrix:
         )
         self.nd = len(fisher_parameters)
         self.fm = None
-        self._derivative_array: NDarray = None
+        self._derivative_array = None
 
     def update_derivative_array(self):
         self._derivative_array = np.array(
@@ -258,12 +258,12 @@ class FisherMatrix:
         self.update_derivative_array()
 
         for i in range(self.nd):
-            partial_i = self._derivative_array[i]
+            partial_i = self._derivative_array[i]  # type: ignore
             self._fm[i, i] = np.sum(
                 aux.scalar_product(partial_i, partial_i, self.detector), axis=0
             )
             for j in range(i + 1, self.nd):
-                partial_j = self._derivative_array[j]
+                partial_j = self._derivative_array[j]  # type: ignore
                 self._fm[i, j] = np.sum(
                     aux.scalar_product(partial_i, partial_j, self.detector), axis=0
                 )
@@ -289,6 +289,12 @@ class FisherMatrix:
     @fm.setter
     def fm(self, hardcode_fm):
         self._fm = hardcode_fm
+
+    @property
+    def derivative_array(self):
+        if self._derivative_array is None:
+            self.update_derivative_array()
+        return self._derivative_array
 
     def __call__(self):
         return self.fm
