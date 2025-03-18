@@ -1,3 +1,5 @@
+from numpy.typing import NDarray
+
 import numpy as np
 import GWFish.modules.waveforms as wf
 import GWFish.modules.detection as det
@@ -165,26 +167,65 @@ class Derivative:
     def __call__(self, target_parameter):
         return self.with_respect_to(target_parameter)
 
+
 class FisherMatrix:
-    def __init__(self, waveform, parameters, fisher_parameters, detector, eps=1e-5, eps_mass=1e-8, waveform_class=wf.Waveform, f_ref=wf.DEFAULT_F_REF):
+    def __init__(
+        self,
+        waveform,
+        parameters,
+        fisher_parameters,
+        detector,
+        eps=1e-5,
+        eps_mass=1e-8,
+        waveform_class=wf.Waveform,
+        f_ref=wf.DEFAULT_F_REF,
+    ):
         self.fisher_parameters = fisher_parameters
         self.detector = detector
-        self.derivative = Derivative(waveform, parameters, detector, eps=eps, eps_mass=eps_mass, waveform_class=waveform_class, f_ref=f_ref)
+        self.derivative = Derivative(
+            waveform,
+            parameters,
+            detector,
+            eps=eps,
+            eps_mass=eps_mass,
+            waveform_class=waveform_class,
+            f_ref=f_ref,
+        )
         self.nd = len(fisher_parameters)
         self.fm = None
+        self._derivative_array: NDarray = None
+
+    def update_derivative_array(self):
+        self._derivative_array = np.array(
+            [self.derivative(param) for param in self.fisher_parameters]
+        )
 
     def update_fm(self):
         self._fm = np.zeros((self.nd, self.nd))
-        for p1 in np.arange(self.nd):
-            deriv1_p = self.fisher_parameters[p1]
-            deriv1 = self.derivative(deriv1_p)
-            
-            self._fm[p1, p1] = np.sum(aux.scalar_product(deriv1, deriv1, self.detector), axis=0)
-            for p2 in np.arange(p1+1, self.nd):
-                deriv2_p = self.fisher_parameters[p2]
-                deriv2 = self.derivative(deriv2_p)
-                self._fm[p1, p2] = np.sum(aux.scalar_product(deriv1, deriv2, self.detector), axis=0)
-                self._fm[p2, p1] = self._fm[p1, p2]
+        self.update_derivative_array()
+
+        for i in range(self.nd):
+            partial_i = self._derivative_array[i]
+            self._fm[i, i] = np.sum(
+                aux.scalar_product(partial_i, partial_i, self.detector), axis=0
+            )
+            for j in range(i + 1, self.nd):
+                partial_j = self._derivative_array[j]
+                self._fm[i, j] = np.sum(
+                    aux.scalar_product(partial_i, partial_j, self.detector), axis=0
+                )
+                self._fm[j, i] = self._fm[i, j]
+
+    #        for p1 in np.arange(self.nd):
+    #            deriv1_p = self.fisher_parameters[p1]
+    #            deriv1 = self.derivative(deriv1_p)
+    #
+    #            self._fm[p1, p1] = np.sum(aux.scalar_product(deriv1, deriv1, self.detector), axis=0)
+    #            for p2 in np.arange(p1+1, self.nd):
+    #                deriv2_p = self.fisher_parameters[p2]
+    #                deriv2 = self.derivative(deriv2_p)
+    #                self._fm[p1, p2] = np.sum(aux.scalar_product(deriv1, deriv2, self.detector), axis=0)
+    #                self._fm[p2, p1] = self._fm[p1, p2]
 
     @property
     def fm(self):
