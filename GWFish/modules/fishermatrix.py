@@ -341,7 +341,7 @@ def compute_detector_fisher(
     fisher_parameters: Optional[list[str]] = None,
     f_ref=wf.DEFAULT_F_REF,
     waveform_model: str = wf.DEFAULT_WAVEFORM_MODEL,
-    waveform_class: type(wf.Waveform) = wf.LALFD_Waveform,
+    waveform_class: type[wf.Waveform] = wf.LALFD_Waveform,
     use_duty_cycle: bool = False,
     redefine_tf_vectors: bool = False,
     long_wavelength: bool = True,
