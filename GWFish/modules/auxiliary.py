@@ -148,17 +148,18 @@ def scalar_product(deriv1, deriv2, detector):
     ff = detector.frequencyvector
 
     if deriv1.ndim == 1:
-        deriv1 = deriv1[:, np.newaxis]
-        deriv2 = deriv2[:, np.newaxis]
+        deriv1 = deriv1[..., np.newaxis]
+        deriv2 = deriv2[..., np.newaxis]
 
     if ff.ndim == 1:
-        ff = ff[:, np.newaxis]
+        ff = ff[..., np.newaxis]
 
     df = ff[1, 0] - ff[0, 0]
 
     scalar_prods = np.zeros(len(components))
     for k in np.arange(len(components)):
         scalar_prods[k] = 4 * np.trapz(
-                np.real(deriv1[:, k] * np.conjugate(deriv2[:, k])) / components[k].Sn(ff[:, 0]), ff[:, 0], axis=0)
+                np.real(deriv1[..., k] * np.conjugate(deriv2[..., k])) / components[k].Sn(ff[..., 0]), ff[..., 0], axis=0
+        )
 
     return scalar_prods
